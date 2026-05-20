@@ -5,6 +5,7 @@ import {
   useCompleteQuest, 
   useDeleteQuest,
   useCreateQuest,
+  useGetDailyState,
   getListQuestsQueryKey,
   getGetStatsQueryKey,
   getGetCharacterQueryKey,
@@ -18,28 +19,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CheckCircle2, Trash2, Plus, Ghost } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { QuestCelebration, type CelebrationConfig } from "@/components/quest-celebration";
 
 export default function Quests() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: quests, isLoading } = useListQuests();
+  const { data: dailyState } = useGetDailyState();
   const completeQuest = useCompleteQuest();
   const deleteQuest = useDeleteQuest();
   const createQuest = useCreateQuest();
 
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState<QuestCategory>("goblin_survival");
+  const [celebration, setCelebration] = useState<CelebrationConfig | null>(null);
 
   const activeQuests = quests?.filter(q => !q.completed) || [];
   const completedQuests = quests?.filter(q => q.completed) || [];
 
   const handleComplete = (id: number) => {
+    const quest = quests?.find(q => q.id === id);
     completeQuest.mutate({ id }, {
-      onSuccess: () => {
+      onSuccess: (result) => {
         queryClient.invalidateQueries({ queryKey: getListQuestsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetStatsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetCharacterQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetActivityQueryKey() });
+        setCelebration({
+          xp: result.xpAwarded ?? quest?.xpReward ?? 10,
+          weather: dailyState?.emotionalWeather ?? "foggy_morning",
+        });
         toast({ title: "Quest complete", description: "XP added to your soul." });
       }
     });
@@ -73,6 +82,8 @@ export default function Quests() {
   }
 
   return (
+    <>
+    <QuestCelebration config={celebration} onDone={() => setCelebration(null)} />
     <div className="p-6 md:p-12 max-w-3xl mx-auto min-h-screen pt-24">
       <motion.header 
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -162,5 +173,6 @@ export default function Quests() {
         </div>
       )}
     </div>
+    </>
   );
 }

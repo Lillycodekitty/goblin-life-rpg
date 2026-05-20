@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" fill="#070d08"/>
+  <!-- Forest floor -->
+  <rect y="140" width="192" height="52" fill="#030805"/>
+  <!-- Far tree layer -->
+  <g fill="#0d1a0f" opacity="0.9">
+    <polygon points="20,140 35,80 50,140"/>
+    <polygon points="50,140 68,70 86,140"/>
+    <polygon points="100,140 118,65 136,140"/>
+    <polygon points="140,140 160,75 180,140"/>
+  </g>
+  <!-- Mid tree layer -->
+  <g fill="#071209" opacity="0.95">
+    <polygon points="0,140 18,85 36,140"/>
+    <polygon points="30,140 52,72 74,140"/>
+    <polygon points="72,140 96,60 120,140"/>
+    <polygon points="118,140 142,78 166,140"/>
+    <polygon points="158,140 176,88 192,140"/>
+  </g>
+  <!-- Near tree layer (darkest) -->
+  <g fill="#020805">
+    <polygon points="-10,142 15,90 40,142"/>
+    <polygon points="55,142 80,78 105,142"/>
+    <polygon points="95,142 122,68 149,142"/>
+    <polygon points="145,142 168,85 191,142"/>
+  </g>
+  <!-- Candle glow -->
+  <radialGradient id="glow" cx="50%" cy="80%" r="45%">
+    <stop offset="0%" stop-color="#c88014" stop-opacity="0.5"/>
+    <stop offset="100%" stop-color="#c88014" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="192" height="192" fill="url(#glow)"/>
+  <!-- Goblin emoji placeholder (🌿 leaf shape) -->
+  <text x="96" y="58" text-anchor="middle" font-size="38" font-family="serif">🌿</text>
+  <!-- Title -->
+  <text x="96" y="168" text-anchor="middle" font-size="13" font-family="Georgia, serif" fill="#c88014" letter-spacing="1">GOBLIN LIFE</text>
+</svg>

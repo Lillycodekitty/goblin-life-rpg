@@ -510,6 +510,96 @@ export function Atmosphere() {
           )}
         </AnimatePresence>
 
+        {/* Dark forest silhouette — sits above gradient, below particles */}
+        <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.72 }}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 1440 900"
+            preserveAspectRatio="xMidYMax slice"
+            className="absolute bottom-0 left-0 w-full h-full"
+          >
+            <defs>
+              <linearGradient id="treeGradFar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0a1a0c" stopOpacity="0.55"/>
+                <stop offset="100%" stopColor="#050d06" stopOpacity="0.85"/>
+              </linearGradient>
+              <linearGradient id="treeGradMid" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#071209" stopOpacity="0.75"/>
+                <stop offset="100%" stopColor="#030806" stopOpacity="0.95"/>
+              </linearGradient>
+              <linearGradient id="treeGradNear" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#020805" stopOpacity="0.92"/>
+                <stop offset="100%" stopColor="#010403" stopOpacity="1"/>
+              </linearGradient>
+            </defs>
+
+            {/* Ground */}
+            <rect y="820" width="1440" height="80" fill="#010403"/>
+
+            {/* Far layer — wispy, misty */}
+            <g fill="url(#treeGradFar)">
+              <polygon points="-20,820 30,620 80,820"/>
+              <polygon points="60,820 120,580 180,820"/>
+              <polygon points="150,820 210,600 270,820"/>
+              <polygon points="240,820 305,560 370,820"/>
+              <polygon points="340,820 405,590 470,820"/>
+              <polygon points="440,820 510,545 580,820"/>
+              <polygon points="550,820 620,570 690,820"/>
+              <polygon points="660,820 735,540 810,820"/>
+              <polygon points="770,820 845,560 920,820"/>
+              <polygon points="880,820 960,545 1040,820"/>
+              <polygon points="1000,820 1080,565 1160,820"/>
+              <polygon points="1120,820 1200,580 1280,820"/>
+              <polygon points="1250,820 1325,600 1400,820"/>
+              <polygon points="1360,820 1420,615 1480,820"/>
+            </g>
+
+            {/* Mid layer — defined silhouettes */}
+            <g fill="url(#treeGradMid)">
+              <polygon points="-30,820 35,640 100,820"/>
+              <polygon points="55,820 130,600 205,820"/>
+              <polygon points="170,820 250,565 330,820"/>
+              <polygon points="290,820 375,545 460,820"/>
+              <polygon points="415,820 505,555 595,820"/>
+              <polygon points="545,820 640,520 735,820"/>
+              <polygon points="680,820 780,530 880,820"/>
+              <polygon points="820,820 920,515 1020,820"/>
+              <polygon points="960,820 1065,535 1170,820"/>
+              <polygon points="1110,820 1215,545 1320,820"/>
+              <polygon points="1260,820 1360,560 1460,820"/>
+              <polygon points="1380,820 1460,590 1540,820"/>
+            </g>
+
+            {/* Near layer — darkest, thickest trunks */}
+            <g fill="url(#treeGradNear)">
+              <polygon points="-50,820 30,660 110,820"/>
+              <polygon points="80,820 175,615 270,820"/>
+              <polygon points="225,820 330,575 435,820"/>
+              <polygon points="380,820 490,545 600,820"/>
+              <polygon points="540,820 660,540 780,820"/>
+              <polygon points="710,820 835,525 960,820"/>
+              <polygon points="880,820 1010,530 1140,820"/>
+              <polygon points="1060,820 1190,545 1320,820"/>
+              <polygon points="1240,820 1365,560 1490,820"/>
+              <polygon points="1380,820 1480,590 1580,820"/>
+              {/* Extra thick nearer foreground elements */}
+              <polygon points="-10,820 100,680 210,820"/>
+              <polygon points="195,820 320,645 445,820"/>
+              <polygon points="620,820 755,630 890,820"/>
+              <polygon points="990,820 1120,640 1250,820"/>
+              <polygon points="1300,820 1410,660 1520,820"/>
+            </g>
+
+            {/* Very near silhouettes — almost pure black, partial tree sides */}
+            <g fill="#010302" opacity="0.97">
+              <polygon points="-20,820 60,700 140,820"/>
+              <polygon points="350,820 445,685 540,820"/>
+              <polygon points="820,820 920,695 1020,820"/>
+              <polygon points="1240,820 1340,700 1440,820"/>
+            </g>
+          </svg>
+        </div>
+
         {/* Vignette — always present */}
         <div
           className="absolute inset-0 pointer-events-none"
