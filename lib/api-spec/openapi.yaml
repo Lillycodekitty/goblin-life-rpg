@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Goblin Life RPG API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: daily-state
+    description: Today's emotional weather and goblin state
+  - name: quests
+    description: Quest management
+  - name: journal
+    description: Journal entries
+  - name: character
+    description: Goblin character profile
+  - name: activity
+    description: Activity and stats
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +33,280 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /daily-state:
+    get:
+      operationId: getDailyState
+      tags: [daily-state]
+      summary: Get today's emotional weather and goblin state
+      responses:
+        "200":
+          description: Today's state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyState"
+    post:
+      operationId: setDailyState
+      tags: [daily-state]
+      summary: Set today's emotional weather and goblin state
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DailyStateInput"
+      responses:
+        "200":
+          description: Updated state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyState"
+
+  /quests:
+    get:
+      operationId: listQuests
+      tags: [quests]
+      summary: List quests
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: completed
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of quests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Quest"
+    post:
+      operationId: createQuest
+      tags: [quests]
+      summary: Create a quest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestInput"
+      responses:
+        "201":
+          description: Created quest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quest"
+
+  /quests/recommended:
+    get:
+      operationId: getRecommendedQuests
+      tags: [quests]
+      summary: Get quest recommendations based on today's emotional weather
+      responses:
+        "200":
+          description: Recommended quests and guidance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestRecommendations"
+
+  /quests/{id}:
+    patch:
+      operationId: updateQuest
+      tags: [quests]
+      summary: Update a quest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestUpdate"
+      responses:
+        "200":
+          description: Updated quest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quest"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteQuest
+      tags: [quests]
+      summary: Delete a quest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /quests/{id}/complete:
+    post:
+      operationId: completeQuest
+      tags: [quests]
+      summary: Mark a quest as complete and award XP
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Completed quest with XP awarded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestCompletion"
+        "404":
+          description: Not found
+
+  /journal:
+    get:
+      operationId: listJournalEntries
+      tags: [journal]
+      summary: List journal entries
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Journal entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JournalEntry"
+    post:
+      operationId: createJournalEntry
+      tags: [journal]
+      summary: Create a journal entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JournalEntryInput"
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+
+  /journal/{id}:
+    get:
+      operationId: getJournalEntry
+      tags: [journal]
+      summary: Get a single journal entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Journal entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteJournalEntry
+      tags: [journal]
+      summary: Delete a journal entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /character:
+    get:
+      operationId: getCharacter
+      tags: [character]
+      summary: Get character profile
+      responses:
+        "200":
+          description: Character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+    patch:
+      operationId: updateCharacter
+      tags: [character]
+      summary: Update character name/title
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CharacterUpdate"
+      responses:
+        "200":
+          description: Updated character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+
+  /activity:
+    get:
+      operationId: getActivity
+      tags: [activity]
+      summary: Get recent activity feed (quest completions + journal entries)
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityFeed"
+
+  /stats:
+    get:
+      operationId: getStats
+      tags: [activity]
+      summary: Get goblin stats — XP, quests today, streak, totals
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoblinStats"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +314,271 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    EmotionalWeather:
+      type: string
+      enum:
+        - foggy_morning
+        - thunderstorm
+        - persistent_drizzle
+        - clear_skies
+        - autumn_drift
+        - cold_snap
+        - golden_hour
+
+    GoblinState:
+      type: string
+      enum:
+        - emotionally_crunchy
+        - unstable_moist_goblin
+        - roadkill_crunch
+        - vaguely_employed
+        - suspiciously_functional
+        - haunted_but_hydrated
+        - tiny_forest_menace
+
+    QuestCategory:
+      type: string
+      enum:
+        - daily_rituals
+        - self_care
+        - goblin_survival
+        - work
+        - creative
+        - cave_restoration
+        - bookish
+
+    DailyState:
+      type: object
+      required: [id, date, emotionalWeather, goblinState, createdAt]
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        emotionalWeather:
+          $ref: "#/components/schemas/EmotionalWeather"
+        goblinState:
+          $ref: "#/components/schemas/GoblinState"
+        note:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    DailyStateInput:
+      type: object
+      required: [emotionalWeather, goblinState]
+      properties:
+        emotionalWeather:
+          $ref: "#/components/schemas/EmotionalWeather"
+        goblinState:
+          $ref: "#/components/schemas/GoblinState"
+        note:
+          type: string
+
+    Quest:
+      type: object
+      required: [id, title, category, completed, xpReward, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          $ref: "#/components/schemas/QuestCategory"
+        completed:
+          type: boolean
+        completedAt:
+          type: ["string", "null"]
+        xpReward:
+          type: integer
+        createdAt:
+          type: string
+
+    QuestInput:
+      type: object
+      required: [title, category]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        category:
+          $ref: "#/components/schemas/QuestCategory"
+        xpReward:
+          type: integer
+          default: 10
+
+    QuestUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        category:
+          $ref: "#/components/schemas/QuestCategory"
+        completed:
+          type: boolean
+
+    QuestCompletion:
+      type: object
+      required: [quest, xpAwarded, character]
+      properties:
+        quest:
+          $ref: "#/components/schemas/Quest"
+        xpAwarded:
+          type: integer
+        character:
+          $ref: "#/components/schemas/Character"
+
+    QuestRecommendations:
+      type: object
+      required: [emotionalWeather, goblinState, guidance, tinyThing, successDefinition, recommendedCategories, quests]
+      properties:
+        emotionalWeather:
+          $ref: "#/components/schemas/EmotionalWeather"
+        goblinState:
+          $ref: "#/components/schemas/GoblinState"
+        guidance:
+          type: object
+          required: [description, translation, whatYouNeed, tinyThing, successToday, recommendedCategories, avoid]
+          properties:
+            description:
+              type: string
+            translation:
+              type: string
+            whatYouNeed:
+              type: string
+            tinyThing:
+              type: string
+            successToday:
+              type: string
+            recommendedCategories:
+              type: array
+              items:
+                $ref: "#/components/schemas/QuestCategory"
+            avoid:
+              type: string
+        tinyThing:
+          type: string
+        successDefinition:
+          type: string
+        recommendedCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestCategory"
+        quests:
+          type: array
+          items:
+            $ref: "#/components/schemas/Quest"
+
+    JournalEntry:
+      type: object
+      required: [id, content, createdAt]
+      properties:
+        id:
+          type: integer
+        content:
+          type: string
+        mood:
+          type: ["string", "null"]
+        emotionalWeather:
+          type: ["string", "null"]
+        goblinState:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    JournalEntryInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+        mood:
+          type: string
+        emotionalWeather:
+          type: string
+        goblinState:
+          type: string
+
+    Character:
+      type: object
+      required: [id, name, title, xp, level, xpToNextLevel, questsCompleted, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        title:
+          type: string
+        xp:
+          type: integer
+        level:
+          type: integer
+        xpToNextLevel:
+          type: integer
+        questsCompleted:
+          type: integer
+        createdAt:
+          type: string
+
+    CharacterUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        title:
+          type: string
+
+    ActivityItem:
+      type: object
+      required: [id, type, description, timestamp]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [quest_completed, journal_entry, state_set]
+        description:
+          type: string
+        xpAwarded:
+          type: ["integer", "null"]
+        timestamp:
+          type: string
+
+    ActivityFeed:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityItem"
+
+    GoblinStats:
+      type: object
+      required: [totalXp, level, questsCompletedToday, questsCompletedTotal, journalEntriesTotal, currentStreak, longestStreak]
+      properties:
+        totalXp:
+          type: integer
+        level:
+          type: integer
+        questsCompletedToday:
+          type: integer
+        questsCompletedTotal:
+          type: integer
+        journalEntriesTotal:
+          type: integer
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer

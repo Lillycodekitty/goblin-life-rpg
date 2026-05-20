@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Goblin Life RPG"
+version = "1.0.0"
+id = "artifacts/goblin-life"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20753
+
+[services.development]
+run = "pnpm --filter @workspace/goblin-life run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/goblin-life", "run", "build" ]
+publicDir = "artifacts/goblin-life/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20753"
+BASE_PATH = "/"
