@@ -510,8 +510,21 @@ export function Atmosphere() {
           )}
         </AnimatePresence>
 
-        {/* Dark forest silhouette — sits above gradient, below particles */}
-        <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.72 }}>
+        {/* Forest ambient sky glow — lighter band just above treeline so silhouettes are visible */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            inset: 0,
+            background: [
+              "radial-gradient(ellipse 160% 45% at 50% 72%, rgba(22,56,26,0.95) 0%, rgba(14,34,16,0.75) 45%, transparent 75%)",
+              "radial-gradient(ellipse 80% 30% at 25% 80%, rgba(12,36,14,0.6) 0%, transparent 60%)",
+              "radial-gradient(ellipse 80% 30% at 75% 80%, rgba(12,36,14,0.6) 0%, transparent 60%)",
+            ].join(", "),
+          }}
+        />
+
+        {/* Dark forest silhouette — black trees against the lighter sky glow */}
+        <div className="absolute inset-0 pointer-events-none">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 1440 900"
@@ -519,22 +532,23 @@ export function Atmosphere() {
             className="absolute bottom-0 left-0 w-full h-full"
           >
             <defs>
+              {/* Far trees — slightly less opaque so the ambient glow shows slightly through */}
               <linearGradient id="treeGradFar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0a1a0c" stopOpacity="0.55"/>
-                <stop offset="100%" stopColor="#050d06" stopOpacity="0.85"/>
+                <stop offset="0%" stopColor="#010d03" stopOpacity="0.75"/>
+                <stop offset="100%" stopColor="#010403" stopOpacity="1"/>
               </linearGradient>
               <linearGradient id="treeGradMid" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#071209" stopOpacity="0.75"/>
-                <stop offset="100%" stopColor="#030806" stopOpacity="0.95"/>
+                <stop offset="0%" stopColor="#010803" stopOpacity="0.88"/>
+                <stop offset="100%" stopColor="#010403" stopOpacity="1"/>
               </linearGradient>
               <linearGradient id="treeGradNear" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#020805" stopOpacity="0.92"/>
-                <stop offset="100%" stopColor="#010403" stopOpacity="1"/>
+                <stop offset="0%" stopColor="#010502" stopOpacity="0.97"/>
+                <stop offset="100%" stopColor="#000301" stopOpacity="1"/>
               </linearGradient>
             </defs>
 
-            {/* Ground */}
-            <rect y="820" width="1440" height="80" fill="#010403"/>
+            {/* Ground fill */}
+            <rect y="830" width="1440" height="70" fill="#000301"/>
 
             {/* Far layer — wispy, misty */}
             <g fill="url(#treeGradFar)">

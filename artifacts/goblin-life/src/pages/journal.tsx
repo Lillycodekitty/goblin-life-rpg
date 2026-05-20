@@ -107,8 +107,8 @@ export default function Journal() {
           </div>
         ) : (
           entries.map((entry, i) => {
-            const weatherMeta = entry.emotionalWeather ? WEATHER_META[entry.emotionalWeather as any] : null;
-            const goblinMeta = entry.goblinState ? GOBLIN_STATE_META[entry.goblinState as any] : null;
+            const weatherMeta = entry.emotionalWeather ? WEATHER_META[entry.emotionalWeather as keyof typeof WEATHER_META] ?? null : null;
+            const goblinMeta = entry.goblinState ? GOBLIN_STATE_META[entry.goblinState as keyof typeof GOBLIN_STATE_META] ?? null : null;
             
             return (
               <motion.div 
