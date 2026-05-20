@@ -3,12 +3,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetDailyState,
   useSetDailyState,
+  useCreateJournalEntry,
   getGetDailyStateQueryKey,
   getGetRecommendedQuestsQueryKey,
+  getListJournalEntriesQueryKey,
   EmotionalWeather,
   GoblinState,
 } from "@workspace/api-client-react";
-import { GOBLIN_STATE_META, WEATHER_META, MODIFIERS } from "@/lib/constants";
+import { GOBLIN_STATE_META, WEATHER_META, MODIFIERS, generateJournalEntry } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { GoblinCard } from "@/components/goblin-card";
@@ -20,6 +22,7 @@ export default function Home() {
   const { toast } = useToast();
   const { data: dailyState, isLoading } = useGetDailyState();
   const setDailyState = useSetDailyState();
+  const createJournalEntry = useCreateJournalEntry();
 
   const [step, setStep] = useState<Step>("state");
   const [selectedState, setSelectedState] = useState<GoblinState>("vaguely_employed");
@@ -48,6 +51,29 @@ export default function Home() {
         onSuccess: (data) => {
           queryClient.setQueryData(getGetDailyStateQueryKey(), data);
           queryClient.invalidateQueries({ queryKey: getGetRecommendedQuestsQueryKey() });
+
+          /* Auto-write today's Grimoire entry */
+          const content = generateJournalEntry(selectedState, selectedWeather, selectedModifiers);
+          createJournalEntry.mutate(
+            {
+              data: {
+                content,
+                mood: selectedState,
+                emotionalWeather: selectedWeather,
+                goblinState: selectedState,
+              },
+            },
+            {
+              onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: getListJournalEntriesQueryKey() });
+                toast({
+                  title: "Reading inscribed",
+                  description: "Today's entry has been added to your Grimoire.",
+                });
+              },
+            }
+          );
+
           setStep("card");
         },
         onError: () => {

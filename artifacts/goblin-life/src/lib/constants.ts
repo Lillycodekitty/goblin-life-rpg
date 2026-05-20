@@ -164,6 +164,45 @@ export const GOBLIN_STATE_META: Record<GoblinState, GoblinStateContent> = {
   },
 };
 
+export function generateJournalEntry(
+  goblinState: GoblinState,
+  weather: EmotionalWeather,
+  activeModifierIds: string[]
+): string {
+  const s = GOBLIN_STATE_META[goblinState];
+  const w = WEATHER_META[weather];
+  const activeLabels = MODIFIERS
+    .filter(m => activeModifierIds.includes(m.id))
+    .map(m => `${m.icon} ${m.label}`);
+
+  const date = new Date().toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long",
+  });
+
+  const curseBlock = activeLabels.length > 0
+    ? `Active curses logged: ${activeLabels.join(", ")}.`
+    : "No active curses recorded. Suspicious, but noted.";
+
+  return [
+    `${date}. Today's card: ${s.name}.`,
+    ``,
+    `${w.icon} Emotional weather: ${w.name}. ${w.description}`,
+    ``,
+    `${curseBlock}`,
+    ``,
+    `Translation: "${s.translation}"`,
+    ``,
+    `What the goblin actually needs: ${s.whatYouNeed}`,
+    ``,
+    `Success today looks like: ${s.successToday}`,
+    ``,
+    `Approach: ${s.approach.join(". ")}.`,
+    `Avoid: ${s.avoid}.`,
+    ``,
+    `~ may your moss be soft ~`,
+  ].join("\n");
+}
+
 export const QUEST_CATEGORY_META: Record<QuestCategory, { icon: string; name: string }> = {
   daily_rituals: { icon: "🕯️", name: "Daily Rituals" },
   self_care: { icon: "🌿", name: "Self Care" },
