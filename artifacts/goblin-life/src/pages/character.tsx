@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { 
-  useGetCharacter, 
+import {
+  useGetCharacter,
   useUpdateCharacter,
   useGetStats,
   useGetActivity,
@@ -14,13 +14,14 @@ import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { Edit2, Check, Star, Flame, Scroll, BookHeart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getLevelTitle, getStreakMessage } from "@/lib/constants";
 
 export default function CharacterSheet() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: character, isLoading: charLoading } = useGetCharacter();
-  const { data: stats, isLoading: statsLoading } = useGetStats();
-  const { data: activity, isLoading: actLoading } = useGetActivity();
+  const { data: stats } = useGetStats();
+  const { data: activity } = useGetActivity();
   const updateChar = useUpdateCharacter();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -35,9 +36,7 @@ export default function CharacterSheet() {
   }, [character, isEditing]);
 
   const handleSave = () => {
-    updateChar.mutate({
-      data: { name, title }
-    }, {
+    updateChar.mutate({ data: { name, title } }, {
       onSuccess: () => {
         setIsEditing(false);
         queryClient.invalidateQueries({ queryKey: getGetCharacterQueryKey() });
@@ -46,41 +45,62 @@ export default function CharacterSheet() {
     });
   };
 
-  if (charLoading || statsLoading) {
-    return <div className="p-6 min-h-screen flex items-center justify-center"><div className="animate-pulse w-16 h-16 bg-primary/20 rounded-full" /></div>;
+  if (charLoading) {
+    return (
+      <div className="p-6 min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-primary/40 font-serif italic">reading the ledger...</div>
+      </div>
+    );
   }
 
   if (!character || !stats) return null;
 
-  const xpProgress = (character.xp / (character.xp + character.xpToNextLevel)) * 100;
+  const xpTotal = character.xp + character.xpToNextLevel;
+  const xpProgress = xpTotal > 0 ? (character.xp / xpTotal) * 100 : 0;
+  const levelTitle = getLevelTitle(character.level);
+  const streakMsg = getStreakMessage(stats.currentStreak);
 
   return (
-    <div className="p-6 md:p-12 max-w-4xl mx-auto min-h-screen pt-24 grid md:grid-cols-[1fr_300px] gap-8">
-      
-      <div className="space-y-8">
-        <motion.div 
+    <div className="p-5 md:p-12 max-w-4xl mx-auto min-h-screen pt-20 grid md:grid-cols-[1fr_300px] gap-8">
+
+      <div className="space-y-6">
+
+        {/* Identity card */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-8 relative overflow-hidden shadow-xl"
+          className="relative bg-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 shadow-xl overflow-hidden"
         >
-          {/* Subtle tarot card border effect */}
           <div className="absolute inset-2 border border-primary/10 rounded-xl pointer-events-none" />
-          
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+
+          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
             <div className="flex-1">
               {isEditing ? (
-                <div className="space-y-4">
-                  <Input value={name} onChange={(e) => setName(e.target.value)} className="text-3xl font-serif h-14 bg-background/50 border-primary/30" />
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} className="text-xl font-serif text-muted-foreground bg-background/50 border-primary/30" />
-                  <Button onClick={handleSave} className="bg-primary text-primary-foreground"><Check className="w-4 h-4 mr-2" /> Save</Button>
+                <div className="space-y-3">
+                  <Input
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="text-2xl font-serif h-12 bg-background/50 border-primary/30"
+                    placeholder="Your name..."
+                  />
+                  <Input
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    className="font-serif bg-background/50 border-primary/30"
+                    placeholder="Your title..."
+                  />
+                  <Button onClick={handleSave} className="bg-primary text-primary-foreground text-sm">
+                    <Check className="w-4 h-4 mr-2" /> Save
+                  </Button>
                 </div>
               ) : (
-                <div className="group relative pr-12">
-                  <h1 className="text-4xl md:text-5xl text-primary font-serif italic tracking-wide">{character.name}</h1>
-                  <p className="text-xl text-muted-foreground mt-2 font-serif">{character.title}</p>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setIsEditing(true)} 
+                <div className="group relative pr-10">
+                  <h1 className="text-3xl md:text-4xl text-primary font-serif italic tracking-wide">
+                    {character.name}
+                  </h1>
+                  <p className="text-base text-muted-foreground mt-1 font-serif">{character.title}</p>
+                  <Button
+                    variant="ghost" size="icon"
+                    onClick={() => setIsEditing(true)}
                     className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -89,76 +109,161 @@ export default function CharacterSheet() {
               )}
             </div>
 
-            <div className="w-32 h-32 rounded-full border-4 border-primary/20 flex items-center justify-center bg-background/50 shadow-inner flex-shrink-0">
-              <div className="text-center">
-                <span className="block text-sm uppercase tracking-widest text-muted-foreground">Level</span>
-                <span className="block text-4xl font-serif text-primary">{character.level}</span>
+            {/* Level badge */}
+            <div className="shrink-0 flex flex-col items-center">
+              <div className="w-24 h-24 rounded-full border-4 border-primary/25 flex items-center justify-center bg-background/50 shadow-inner">
+                <div className="text-center">
+                  <span className="block text-[9px] uppercase tracking-widest text-muted-foreground">Level</span>
+                  <span className="block text-4xl font-serif text-primary leading-none">{character.level}</span>
+                </div>
               </div>
+              <p className="text-[10px] text-primary/60 uppercase tracking-wide mt-2 text-center max-w-[100px] leading-tight">
+                {levelTitle}
+              </p>
             </div>
           </div>
 
-          <div className="mt-12 space-y-2">
-            <div className="flex justify-between text-sm uppercase tracking-widest font-medium text-muted-foreground">
+          {/* XP bar */}
+          <div className="mt-8 space-y-1.5">
+            <div className="flex justify-between text-xs uppercase tracking-widest text-muted-foreground">
               <span>Experience</span>
-              <span>{character.xp} / {character.xp + character.xpToNextLevel}</span>
+              <span className="font-mono">{character.xp} / {xpTotal} XP</span>
             </div>
-            <Progress value={xpProgress} className="h-3 bg-background/50" />
-            <p className="text-right text-xs text-primary/70">{character.xpToNextLevel} XP to next level</p>
+            <Progress value={xpProgress} className="h-2.5 bg-background/50" />
+            <p className="text-right text-xs text-primary/60">
+              {character.xpToNextLevel} XP to next level — <span className="italic">{getLevelTitle(character.level + 1)}</span>
+            </p>
           </div>
         </motion.div>
 
-        <motion.div 
+        {/* Stats grid */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 gap-4"
+          className="grid grid-cols-2 gap-3"
         >
-          <div className="bg-card/20 border border-border/30 rounded-xl p-6 flex flex-col items-center justify-center text-center space-y-2">
-            <Flame className="w-8 h-8 text-orange-500/70" />
-            <span className="text-3xl font-serif">{stats.currentStreak}</span>
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Day Streak</span>
+          {/* Streak */}
+          <div className="bg-card/20 border border-border/30 rounded-xl p-5 flex flex-col items-center text-center space-y-1.5 col-span-2">
+            <Flame className="w-7 h-7 text-orange-500/70" />
+            <span className="text-4xl font-serif">{stats.currentStreak}</span>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Day Streak</span>
+            <p className="text-xs text-muted-foreground/60 italic">{streakMsg}</p>
+            {stats.currentStreak === 0 && (
+              <p className="text-xs text-muted-foreground/40">Showing up on hard days counts. Cold Snap days count double in here.</p>
+            )}
           </div>
-          <div className="bg-card/20 border border-border/30 rounded-xl p-6 flex flex-col items-center justify-center text-center space-y-2">
-            <Scroll className="w-8 h-8 text-primary/70" />
+
+          <div className="bg-card/20 border border-border/30 rounded-xl p-5 flex flex-col items-center text-center space-y-1.5">
+            <Scroll className="w-7 h-7 text-primary/70" />
             <span className="text-3xl font-serif">{stats.questsCompletedTotal}</span>
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Quests</span>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Quests Done</span>
           </div>
-          <div className="bg-card/20 border border-border/30 rounded-xl p-6 flex flex-col items-center justify-center text-center space-y-2">
-            <BookHeart className="w-8 h-8 text-rose-500/70" />
+
+          <div className="bg-card/20 border border-border/30 rounded-xl p-5 flex flex-col items-center text-center space-y-1.5">
+            <BookHeart className="w-7 h-7 text-rose-500/70" />
             <span className="text-3xl font-serif">{stats.journalEntriesTotal}</span>
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Entries</span>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Grimoire Entries</span>
           </div>
-          <div className="bg-card/20 border border-border/30 rounded-xl p-6 flex flex-col items-center justify-center text-center space-y-2">
-            <Star className="w-8 h-8 text-amber-500/70" />
+
+          <div className="bg-card/20 border border-border/30 rounded-xl p-5 flex flex-col items-center text-center space-y-1.5 col-span-2">
+            <Star className="w-7 h-7 text-amber-500/70" />
             <span className="text-3xl font-serif">{stats.totalXp}</span>
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Total XP</span>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Total XP Earned</span>
+            <p className="text-xs text-muted-foreground/40 italic">All of it. Every hard day included.</p>
           </div>
         </motion.div>
+
+        {/* Level ladder — mobile */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          className="bg-card/20 border border-border/30 rounded-xl p-5 space-y-3 md:hidden"
+        >
+          <h3 className="text-[10px] uppercase tracking-widest text-primary/60">The Path</h3>
+          <LevelLadder currentLevel={character.level} />
+        </motion.div>
+
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
-        className="bg-card/10 border-l border-border/20 pl-8 space-y-6 hidden md:block"
-      >
-        <h3 className="text-sm font-medium uppercase tracking-widest text-primary/80 border-b border-border/20 pb-4">Recent Chronicles</h3>
-        <div className="space-y-6 relative before:absolute before:inset-y-0 before:left-[11px] before:w-px before:bg-border/30">
-          {!activity?.items?.length ? (
-            <p className="text-muted-foreground font-serif italic pl-8">No recent activity.</p>
-          ) : (
-            activity.items.map((item, i) => (
-              <div key={i} className="relative pl-8">
-                <div className="absolute left-0 w-6 h-6 rounded-full bg-background border border-primary/30 flex items-center justify-center mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-primary/50" />
-                </div>
-                <p className="font-serif text-foreground/90">{item.description}</p>
-                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                  <span>{format(new Date(item.timestamp), "MMM d")}</span>
-                  {item.xpAwarded && <span className="text-primary/70">+{item.xpAwarded} XP</span>}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </motion.div>
+      {/* Desktop sidebar */}
+      <div className="hidden md:block space-y-6">
 
+        {/* Level ladder */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}
+          className="bg-card/20 border border-border/20 rounded-xl p-5 space-y-3"
+        >
+          <h3 className="text-[10px] uppercase tracking-widest text-primary/60">The Path</h3>
+          <LevelLadder currentLevel={character.level} />
+        </motion.div>
+
+        {/* Recent activity */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }}
+          className="space-y-4"
+        >
+          <h3 className="text-[10px] uppercase tracking-widest text-primary/60 border-b border-border/20 pb-3">
+            Recent Chronicles
+          </h3>
+          <div className="space-y-5 relative before:absolute before:inset-y-0 before:left-[11px] before:w-px before:bg-border/30">
+            {!activity?.items?.length ? (
+              <p className="text-muted-foreground font-serif italic pl-8 text-sm">Nothing logged yet.</p>
+            ) : (
+              activity.items.map((item, i) => (
+                <div key={i} className="relative pl-8">
+                  <div className="absolute left-0 w-6 h-6 rounded-full bg-background border border-primary/30 flex items-center justify-center mt-0.5">
+                    <div className="w-2 h-2 rounded-full bg-primary/50" />
+                  </div>
+                  <p className="font-serif text-foreground/90 text-sm">{item.description}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    <span>{format(new Date(item.timestamp), "MMM d")}</span>
+                    {item.xpAwarded && <span className="text-primary/70">+{item.xpAwarded} XP</span>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </motion.div>
+
+      </div>
+
+    </div>
+  );
+}
+
+/* ── Level ladder component ──────────────────────────────── */
+const LEVEL_RUNGS = [
+  { level: 1,  title: "Freshly Spawned Goblin" },
+  { level: 3,  title: "Moss-Crowned Menace" },
+  { level: 5,  title: "Blanket Warlord" },
+  { level: 7,  title: "Doom Pile Slayer" },
+  { level: 9,  title: "Villain Cave Architect" },
+  { level: 11, title: "Certified Forest Cryptid" },
+  { level: 16, title: "Emotionally Competent Nightmare" },
+  { level: 21, title: "Legendary Cozy Chaos Witch" },
+];
+
+function LevelLadder({ currentLevel }: { currentLevel: number }) {
+  return (
+    <div className="space-y-2">
+      {LEVEL_RUNGS.map(({ level, title }) => {
+        const isReached  = currentLevel >= level;
+        const isCurrent  = currentLevel >= level &&
+          (LEVEL_RUNGS.findIndex(r => r.level > currentLevel) === LEVEL_RUNGS.indexOf({ level, title }) ||
+           LEVEL_RUNGS[LEVEL_RUNGS.indexOf({ level, title }) + 1]?.level > currentLevel);
+        return (
+          <div
+            key={level}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+              isReached
+                ? "bg-primary/10 border border-primary/20 text-primary"
+                : "text-muted-foreground/40"
+            }`}
+          >
+            <span className="font-mono text-xs shrink-0 w-6">{level}</span>
+            <span className={`font-serif ${isReached ? "" : "line-through opacity-50"}`}>{title}</span>
+            {isReached && <span className="ml-auto text-[10px]">✦</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }

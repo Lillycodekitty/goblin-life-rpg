@@ -10,12 +10,19 @@ import {
   EmotionalWeather,
   GoblinState,
 } from "@workspace/api-client-react";
-import { GOBLIN_STATE_META, WEATHER_META, MODIFIERS, generateJournalEntry } from "@/lib/constants";
+import {
+  GOBLIN_STATE_META,
+  WEATHER_META,
+  MODIFIERS,
+  CREATURE_LIST,
+  type CreatureId,
+  generateJournalEntry,
+} from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { GoblinCard } from "@/components/goblin-card";
 
-type Step = "state" | "modifiers" | "card";
+type Step = "state" | "creatures" | "modifiers" | "card";
 
 export default function Home() {
   const queryClient = useQueryClient();
@@ -27,6 +34,7 @@ export default function Home() {
   const [step, setStep] = useState<Step>("state");
   const [selectedState, setSelectedState] = useState<GoblinState>("vaguely_employed");
   const [selectedWeather, setSelectedWeather] = useState<EmotionalWeather>("foggy_morning");
+  const [selectedCreatures, setSelectedCreatures] = useState<CreatureId[]>([]);
   const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]);
 
   /* Restore today's saved state */
@@ -37,6 +45,12 @@ export default function Home() {
       setStep("card");
     }
   }, [dailyState]);
+
+  const toggleCreature = (id: CreatureId) => {
+    setSelectedCreatures(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
 
   const toggleModifier = (id: string) => {
     setSelectedModifiers(prev =>
@@ -52,8 +66,13 @@ export default function Home() {
           queryClient.setQueryData(getGetDailyStateQueryKey(), data);
           queryClient.invalidateQueries({ queryKey: getGetRecommendedQuestsQueryKey() });
 
-          /* Auto-write today's Grimoire entry */
-          const content = generateJournalEntry(selectedState, selectedWeather, selectedModifiers);
+          /* Auto-write Grimoire entry */
+          const content = generateJournalEntry(
+            selectedState,
+            selectedWeather,
+            selectedModifiers,
+            selectedCreatures
+          );
           createJournalEntry.mutate(
             {
               data: {
@@ -86,6 +105,7 @@ export default function Home() {
   const handleDrawAgain = () => {
     setStep("state");
     setSelectedModifiers([]);
+    setSelectedCreatures([]);
   };
 
   if (isLoading) {
@@ -125,7 +145,7 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.3 }}
-            className="max-w-sm mx-auto space-y-6"
+            className="max-w-sm mx-auto space-y-5"
           >
             <div className="text-center space-y-1">
               <p className="text-[10px] tracking-[0.25em] uppercase text-primary/50">Step I · The Reckoning</p>
@@ -154,24 +174,90 @@ export default function Home() {
                       </p>
                       <p className="text-xs text-muted-foreground/70 italic mt-0.5 truncate">{meta.tagline}</p>
                     </div>
+                    {isSelected && <span className="text-primary ml-auto shrink-0 text-sm">✦</span>}
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            <Btn onClick={() => setStep("creatures")} className="w-full h-12 bg-primary text-primary-foreground font-sans tracking-widest text-sm uppercase">
+              Continue →
+            </Btn>
+          </motion.div>
+        )}
+
+        {/* ── STEP 2: Creature Check-In ────────────────────────── */}
+        {step === "creatures" && (
+          <motion.div
+            key="step-creatures"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-sm mx-auto space-y-5"
+          >
+            <button
+              onClick={() => setStep("state")}
+              className="text-xs text-muted-foreground/50 hover:text-muted-foreground uppercase tracking-widest flex items-center gap-1"
+            >
+              ← back
+            </button>
+
+            <div className="text-center space-y-1">
+              <p className="text-[10px] tracking-[0.25em] uppercase text-primary/50">Step II · The Woods</p>
+              <h2 className="font-serif text-2xl text-foreground/90">Who is moving through the woods today?</h2>
+              <p className="text-xs text-muted-foreground/50 italic">Select all that apply. Or none — that's valid too.</p>
+            </div>
+
+            <div className="space-y-3">
+              {CREATURE_LIST.map((creature) => {
+                const isSelected = selectedCreatures.includes(creature.id);
+                return (
+                  <motion.button
+                    key={creature.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => toggleCreature(creature.id)}
+                    className={`w-full p-4 rounded-xl border text-left transition-all duration-200 ${
+                      isSelected
+                        ? "border-primary/50 bg-primary/10 shadow-lg shadow-primary/5"
+                        : "border-border/40 bg-card/30 hover:border-border/60 hover:bg-card/50"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl shrink-0">{creature.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className={`font-serif text-base ${isSelected ? "text-primary" : "text-foreground/90"}`}>
+                            {creature.name}
+                          </p>
+                          {isSelected && <span className="text-primary text-xs">✦</span>}
+                        </div>
+                        <p className="text-[11px] text-primary/50 uppercase tracking-wide mt-0.5">{creature.species}</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">{creature.meaning}</p>
+                      </div>
+                    </div>
                     {isSelected && (
-                      <span className="text-primary ml-auto shrink-0 text-sm">✦</span>
+                      <div className="mt-2 pl-9">
+                        <p className="text-xs text-muted-foreground/60 italic">"{creature.coretruth}"</p>
+                        <div className="flex gap-1 mt-1.5">
+                          {creature.careIcons.map((ic, i) => (
+                            <span key={i} className="text-base">{ic}</span>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </motion.button>
                 );
               })}
             </div>
 
-            <Button
-              onClick={() => setStep("modifiers")}
-              className="w-full h-12 bg-primary text-primary-foreground font-sans tracking-widest text-sm uppercase"
-            >
+            <Btn onClick={() => setStep("modifiers")} className="w-full h-12 bg-primary text-primary-foreground font-sans tracking-widest text-sm uppercase">
               Continue →
-            </Button>
+            </Btn>
           </motion.div>
         )}
 
-        {/* ── STEP 2: Modifiers + Weather ──────────────────────── */}
+        {/* ── STEP 3: Modifiers + Weather ──────────────────────── */}
         {step === "modifiers" && (
           <motion.div
             key="step-modifiers"
@@ -181,9 +267,8 @@ export default function Home() {
             transition={{ duration: 0.3 }}
             className="max-w-sm mx-auto space-y-6"
           >
-            {/* Back button */}
             <button
-              onClick={() => setStep("state")}
+              onClick={() => setStep("creatures")}
               className="text-xs text-muted-foreground/50 hover:text-muted-foreground uppercase tracking-widest flex items-center gap-1"
             >
               ← back
@@ -219,7 +304,7 @@ export default function Home() {
             {/* Modifiers */}
             <div className="space-y-2">
               <div className="text-center space-y-0.5">
-                <p className="text-[10px] tracking-[0.25em] uppercase text-primary/50">Step II · Modifiers</p>
+                <p className="text-[10px] tracking-[0.25em] uppercase text-primary/50">Step III · Modifiers</p>
                 <h2 className="font-serif text-xl text-foreground/90">What's in the mix today?</h2>
               </div>
               <div className="flex flex-wrap gap-2 justify-center">
@@ -243,17 +328,17 @@ export default function Home() {
               </div>
             </div>
 
-            <Button
+            <Btn
               onClick={handleDrawCard}
               disabled={setDailyState.isPending}
               className="w-full h-12 bg-primary text-primary-foreground font-sans tracking-widest text-sm uppercase shadow-lg shadow-primary/20"
             >
               {setDailyState.isPending ? "Reading the moss..." : "✦ Draw the Card ✦"}
-            </Button>
+            </Btn>
           </motion.div>
         )}
 
-        {/* ── STEP 3: The Goblin Card ──────────────────────────── */}
+        {/* ── STEP 4: The Goblin Card ──────────────────────────── */}
         {step === "card" && (
           <motion.div
             key="step-card"
@@ -267,6 +352,7 @@ export default function Home() {
               goblinState={selectedState}
               weather={selectedWeather}
               activeModifiers={selectedModifiers}
+              selectedCreatures={selectedCreatures}
               onDrawAgain={handleDrawAgain}
             />
           </motion.div>
@@ -277,19 +363,20 @@ export default function Home() {
   );
 }
 
-/* Local button shim so we don't need extra imports at the top level */
-function Button({
-  children, onClick, disabled, className, variant,
+function Btn({
+  children, onClick, disabled, className,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
-  variant?: "ghost" | "outline";
 }) {
-  const base = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
   return (
-    <button onClick={onClick} disabled={disabled} className={`${base} ${className ?? ""}`}>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${className ?? ""}`}
+    >
       {children}
     </button>
   );
