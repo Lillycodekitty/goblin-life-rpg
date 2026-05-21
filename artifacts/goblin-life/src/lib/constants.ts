@@ -400,6 +400,23 @@ export function getStreakMessage(streak: number): string {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   DAILY AUTO-QUESTS  (seeded once per day automatically)
+───────────────────────────────────────────────────────────── */
+export const DAILY_SURVIVAL_QUESTS: SuggestedQuest[] = [
+  { title: "Drink water — at least once today", category: "goblin_survival", xpReward: 5 },
+  { title: "Eat something. Anything qualifies.", category: "goblin_survival", xpReward: 5 },
+  { title: "Take the medication, if there is medication", category: "daily_rituals", xpReward: 10 },
+  { title: "Move the body somehow — walk, stretch, pace", category: "self_care", xpReward: 10 },
+];
+
+export const DAILY_FUN_QUESTS: SuggestedQuest[] = [
+  { title: "Write in the Grimoire — even one line", category: "daily_rituals", xpReward: 15 },
+  { title: "Send a nice thing to one person", category: "daily_rituals", xpReward: 10 },
+  { title: "Read 10 pages of anything cozy", category: "bookish", xpReward: 10 },
+  { title: "Spend 10 minutes on something you actually want to do", category: "creative", xpReward: 15 },
+];
+
+/* ─────────────────────────────────────────────────────────────
    AUTO-JOURNAL GENERATOR
 ───────────────────────────────────────────────────────────── */
 export function generateJournalEntry(
