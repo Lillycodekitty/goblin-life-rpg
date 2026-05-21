@@ -1,0 +1,12 @@
+[build]
+  command = "pnpm --filter @workspace/goblin-life... run build"
+  publish = "artifacts/goblin-life/dist/public"
+
+[build.environment]
+  PORT = "3000"
+  BASE_PATH = "/"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
