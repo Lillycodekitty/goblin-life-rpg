@@ -11,10 +11,5 @@ export const logger = pino({
   ],
   ...(isProduction
     ? {}
-    : {
-        transport: {
-          target: "pino-pretty",
-          options: { colorize: true },
-        },
-      }),
+    : {}),
 });
