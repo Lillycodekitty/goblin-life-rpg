@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, Trash2, Plus, Ghost, Flame, Sparkles } from "lucide-react";
+import { CheckCircle2, Trash2, Plus, Ghost, Flame, Sparkles, Snowflake } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { isToday } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +45,11 @@ export default function Quests() {
   const [celebration,  setCelebration] = useState<CelebrationConfig | null>(null);
   const seeding = useRef(false);
 
+  /* ── Hard day detection ────────────────────────────────── */
+  const isHardDay =
+    dailyState?.emotionalWeather === "cold_snap" ||
+    dailyState?.goblinState === "roadkill_crunch";
+
   /* ── Daily quest auto-seed ─────────────────────────────── */
   useEffect(() => {
     if (!quests || seeding.current) return;
@@ -59,24 +64,35 @@ export default function Quests() {
       return;
     }
 
+    /* On hard days, survival XP is doubled */
+    const hardDay =
+      dailyState?.emotionalWeather === "cold_snap" ||
+      dailyState?.goblinState === "roadkill_crunch";
+
+    const survivalQuests = DAILY_SURVIVAL_QUESTS.map(q => ({
+      ...q,
+      xpReward: hardDay ? q.xpReward * 2 : q.xpReward,
+    }));
+    const allDaily = [...survivalQuests, ...DAILY_FUN_QUESTS];
+
     /* Seed daily quests */
     seeding.current = true;
-    const allDaily = [...DAILY_SURVIVAL_QUESTS, ...DAILY_FUN_QUESTS];
-
     Promise.all(allDaily.map(q => createQuest.mutateAsync({ data: q })))
       .then(() => {
         queryClient.invalidateQueries({ queryKey: getListQuestsQueryKey() });
         sessionStorage.setItem(storageKey, "1");
         toast({
-          title: "Daily quests ready 🍄",
-          description: "Survival + fun quests added to the board.",
+          title: hardDay ? "Cold Snap quests ready ❄️" : "Daily quests ready 🍄",
+          description: hardDay
+            ? "Survival counts double today. Existing is valid progress."
+            : "Survival + fun quests added to the board.",
         });
       })
       .catch(() => {
         seeding.current = false;
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quests]);
+  }, [quests, dailyState]);
 
   const activeQuests    = quests?.filter(q => !q.completed) ?? [];
   const completedQuests = quests?.filter(q => q.completed)  ?? [];
@@ -151,6 +167,31 @@ export default function Quests() {
             Small things. All of them count.
           </p>
         </motion.header>
+
+        {/* Cold Snap / Hard Day banner */}
+        <AnimatePresence>
+          {isHardDay && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mb-6 rounded-2xl border border-blue-400/20 bg-blue-950/30 backdrop-blur-sm p-4 flex gap-3 items-start"
+            >
+              <Snowflake className="w-5 h-5 text-blue-300/70 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-serif text-blue-200/80 font-medium">
+                  {dailyState?.goblinState === "roadkill_crunch"
+                    ? "Roadkill Crunch detected."
+                    : "Cold Snap in effect."}
+                </p>
+                <p className="text-xs text-blue-300/55 leading-relaxed">
+                  Survival counts double today. Every small thing you do is valid progress.
+                  Completing a survival quest gives twice the XP.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Add quest form */}
         <motion.form
